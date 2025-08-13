@@ -510,7 +510,7 @@ const FooterComponent: React.FC = () => {
           rel="noreferrer"
           target="_blank"
         >
-          $Source | 2023 - 2024
+          $source | 2025 - 2026
         </SourceLink>
       </p>
     </Footer>
