@@ -24,7 +24,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Health check
-app.get("/health", (req, res) => {
+app.get("/health", (req: express.Request, res: express.Response) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
@@ -32,7 +32,7 @@ app.get("/health", (req, res) => {
 app.use("/auth", authRoutes);
 app.use("/notes", notesRoutes);
 
-app.get("/", (req, res) => {
+app.get("/", (req: express.Request, res: express.Response) => {
   res.json({ message: "Todo Backend API" });
 });
 
