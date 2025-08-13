@@ -1,0 +1,32 @@
+# Environment variables - NEVER commit these\!
+.env.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+todo-backend/prisma/dev.db
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated Prisma client (will be regenerated)
+src/generated/
+
+# Cache
+.cache/
+.npm/
+
+# Coverage reports
+coverage/
