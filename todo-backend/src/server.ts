@@ -29,8 +29,8 @@ app.get("/health", (req: express.Request, res: express.Response) => {
 });
 
 // Routes
-app.use("/auth", authRoutes);
-app.use("/notes", notesRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/notes", notesRoutes);
 
 app.get("/", (req: express.Request, res: express.Response) => {
   res.json({ message: "Todo Backend API" });
