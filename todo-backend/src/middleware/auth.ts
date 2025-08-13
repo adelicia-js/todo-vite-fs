@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
 interface AuthenticatedRequest extends Request {
-  userId: number;
+  userId: string;
 }
 
 export const authenticateToken = (
@@ -20,7 +20,7 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     (req as AuthenticatedRequest).userId = decoded.userId;
     next();
   } catch (error) {

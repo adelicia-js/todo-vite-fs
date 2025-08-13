@@ -4,7 +4,7 @@ import { PrismaClient } from "../generated/prisma";
 const prisma = new PrismaClient();
 
 interface AuthenticatedRequest extends Request {
-  userId: number;
+  userId: string;
 }
 
 export const getNotes = async (
@@ -59,10 +59,10 @@ export const updateNote = async (
 ): Promise<Response> => {
   try {
     const userId = (req as AuthenticatedRequest).userId;
-    const noteId = parseInt(req.params.id, 10);
+    const noteId = req.params.id;
     const { title, completed } = req.body;
 
-    if (isNaN(noteId)) {
+    if (!noteId || noteId.trim() === "") {
       return res.status(400).json({ error: "Invalid note ID" });
     }
 
@@ -105,9 +105,9 @@ export const deleteNote = async (
 ): Promise<Response> => {
   try {
     const userId = (req as AuthenticatedRequest).userId;
-    const noteId = parseInt(req.params.id, 10);
+    const noteId = req.params.id;
 
-    if (isNaN(noteId)) {
+    if (!noteId || noteId.trim() === "") {
       return res.status(400).json({ error: "Invalid note ID" });
     }
 
