@@ -1,4 +1,12 @@
 import axios from "axios";
+import type { 
+  AuthResponse, 
+  Todo, 
+  LoginRequest, 
+  RegisterRequest, 
+  CreateTodoRequest, 
+  UpdateTodoRequest 
+} from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -10,7 +18,7 @@ const api = axios.create({
 // Add auth token to requests automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
-  if (token) {
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -32,40 +40,43 @@ api.interceptors.response.use(
 
 // Auth API calls
 export const authAPI = {
-  login: async (email: string, password: string) => {
-    const response = await api.post("/auth/login", { email, password });
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    const loginData: LoginRequest = { email, password };
+    const response = await api.post<AuthResponse>("/auth/login", loginData);
     return response.data;
   },
 
-  register: async (email: string, password: string) => {
-    const response = await api.post("/auth/register", { email, password });
+  register: async (email: string, password: string): Promise<AuthResponse> => {
+    const registerData: RegisterRequest = { email, password };
+    const response = await api.post<AuthResponse>("/auth/register", registerData);
     return response.data;
   },
 };
 
 // Todo API calls
 export const todoAPI = {
-  getTodos: async () => {
-    const response = await api.get("/notes");
+  getTodos: async (): Promise<Todo[]> => {
+    const response = await api.get<Todo[]>("/notes");
     return response.data;
   },
 
-  createTodo: async (title: string) => {
-    const response = await api.post("/notes", { title, completed: false });
+  createTodo: async (title: string): Promise<Todo> => {
+    const createData: CreateTodoRequest = { title, completed: false };
+    const response = await api.post<Todo>("/notes", createData);
     return response.data;
   },
 
-  updateTodo: async (id: number, title?: string, completed?: boolean) => {
-    const updateData: { title?: string; completed?: boolean } = {};
+  updateTodo: async (id: number, title?: string, completed?: boolean): Promise<Todo> => {
+    const updateData: UpdateTodoRequest = {};
     if (title !== undefined) updateData.title = title;
     if (completed !== undefined) updateData.completed = completed;
 
-    const response = await api.put(`/notes/${id}`, updateData);
+    const response = await api.put<Todo>(`/notes/${id}`, updateData);
     return response.data;
   },
 
-  deleteTodo: async (id: number) => {
-    const response = await api.delete(`/notes/${id}`);
+  deleteTodo: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete<{ message: string }>(`/notes/${id}`);
     return response.data;
   },
 };

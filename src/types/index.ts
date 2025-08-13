@@ -13,5 +13,38 @@ export interface Todo {
   title: string;
   completed: boolean;
   createdAt: string;
+  updatedAt: string;
   userId: number;
+}
+
+// API Request types
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+}
+
+export interface CreateTodoRequest {
+  title: string;
+  completed?: boolean;
+}
+
+export interface UpdateTodoRequest {
+  title?: string;
+  completed?: boolean;
+}
+
+// API Response types
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+  message?: string;
 }
