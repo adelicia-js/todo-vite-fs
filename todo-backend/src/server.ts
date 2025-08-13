@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // CORS configuration
 const corsOptions = {
   origin: NODE_ENV === "production" 
-    ? process.env.FRONTEND_URL || "https://your-frontend-domain.com"
+    ? ["https://todo-vite-fs.vercel.app", process.env.FRONTEND_URL].filter((url): url is string => Boolean(url))
     : ["http://localhost:5173", "http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
