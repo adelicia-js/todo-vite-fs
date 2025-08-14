@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   email: string;
 }
 
@@ -9,12 +9,12 @@ export interface AuthResponse {
 }
 
 export interface Todo {
-  id: number;
+  id: string;
   title: string;
   completed: boolean;
   createdAt: string;
   updatedAt: string;
-  userId: number;
+  userId: string;
 }
 
 // API Request types

@@ -42,13 +42,13 @@ api.interceptors.response.use(
 export const authAPI = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
     const loginData: LoginRequest = { email, password };
-    const response = await api.post<AuthResponse>("/auth/login", loginData);
+    const response = await api.post<AuthResponse>("/api/auth/login", loginData);
     return response.data;
   },
 
   register: async (email: string, password: string): Promise<AuthResponse> => {
     const registerData: RegisterRequest = { email, password };
-    const response = await api.post<AuthResponse>("/auth/register", registerData);
+    const response = await api.post<AuthResponse>("/api/auth/register", registerData);
     return response.data;
   },
 };
@@ -56,27 +56,27 @@ export const authAPI = {
 // Todo API calls
 export const todoAPI = {
   getTodos: async (): Promise<Todo[]> => {
-    const response = await api.get<Todo[]>("/notes");
+    const response = await api.get<Todo[]>("/api/notes");
     return response.data;
   },
 
   createTodo: async (title: string): Promise<Todo> => {
     const createData: CreateTodoRequest = { title, completed: false };
-    const response = await api.post<Todo>("/notes", createData);
+    const response = await api.post<Todo>("/api/notes", createData);
     return response.data;
   },
 
-  updateTodo: async (id: number, title?: string, completed?: boolean): Promise<Todo> => {
+  updateTodo: async (id: string, title?: string, completed?: boolean): Promise<Todo> => {
     const updateData: UpdateTodoRequest = {};
     if (title !== undefined) updateData.title = title;
     if (completed !== undefined) updateData.completed = completed;
 
-    const response = await api.put<Todo>(`/notes/${id}`, updateData);
+    const response = await api.put<Todo>(`/api/notes/${id}`, updateData);
     return response.data;
   },
 
-  deleteTodo: async (id: number): Promise<{ message: string }> => {
-    const response = await api.delete<{ message: string }>(`/notes/${id}`);
+  deleteTodo: async (id: string): Promise<{ message: string }> => {
+    const response = await api.delete<{ message: string }>(`/api/notes/${id}`);
     return response.data;
   },
 };
