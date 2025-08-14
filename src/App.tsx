@@ -46,8 +46,8 @@ const TodoInputComponent: React.FC<TodoInputProps> = ({
 
 interface TodoListProps {
   todoList: Todo[];
-  removeTodo: (todoId: number) => void;
-  updateTodo: (todoId: number, newTitle: string) => void;
+  removeTodo: (todoId: string) => void;
+  updateTodo: (todoId: string, newTitle: string) => void;
 }
 
 const TodoListComponent: React.FC<TodoListProps> = ({
@@ -55,7 +55,7 @@ const TodoListComponent: React.FC<TodoListProps> = ({
   removeTodo,
   updateTodo,
 }) => {
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
   const startEdit = (todo: Todo) => {
@@ -203,7 +203,7 @@ function App() {
     }
   };
 
-  const updateTodo = async (todoId: number, newTitle: string) => {
+  const updateTodo = async (todoId: string, newTitle: string) => {
     try {
       const updatedTodo = await todoAPI.updateTodo(todoId, newTitle);
       setTodos(todos.map((t) => (t.id === todoId ? updatedTodo : t)));
@@ -212,7 +212,7 @@ function App() {
     }
   };
 
-  const deleteTodo = async (todoId: number) => {
+  const deleteTodo = async (todoId: string) => {
     try {
       await todoAPI.deleteTodo(todoId);
       setTodos(todos.filter((t) => t.id !== todoId));
