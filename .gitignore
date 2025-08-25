@@ -99,9 +99,11 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 
-# Claude AI files
+# Claude/AI
 .claude
 CLAUDE.md
+GEMINI.md
+
 
 # Self-Learning Docs
 learning/*

@@ -169,15 +169,26 @@ function App() {
 
   // Check if user is already logged in
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const savedUser = localStorage.getItem("user");
+    const validateToken = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const savedUser = localStorage.getItem("user");
 
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      fetchTodos();
-    } else {
-      setLoading(false);
-    }
+        if (token && savedUser) {
+          await todoAPI.getTodos(); // Or a dedicated health-check endpoint
+          setUser(JSON.parse(savedUser));
+          fetchTodos();
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        // The interceptor in api.ts will handle the 401 error
+        console.error("Token validation failed:", error);
+        setLoading(false);
+      }
+    };
+
+    validateToken();
   }, []);
 
   const fetchTodos = async () => {
