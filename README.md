@@ -1,17 +1,19 @@
 # 📝 Full-Stack Todo Application
 
-A modern, production-ready todo application built with React, TypeScript, Node.js, and SQLite. Features user authentication, real-time CRUD operations, and beautiful responsive design.
+A modern, production-ready todo application built with React, TypeScript, Node.js, and SQLite. Features user authentication, pagination, real-time CRUD operations, and a beautiful notebook-style responsive design.
 
 <image src="public/app_screenshot.png" width="85%" height="85%">
 
 ## ✨ Features
 
-- 🔐 **User Authentication** - Secure JWT-based login/register system
-- 📝 **CRUD Operations** - Create, read, update, and delete todos
+- 🔐 **User Authentication** - Secure JWT-based login/register system with token validation
+- 📝 **CRUD Operations** - Create, read, update, delete todos with optimistic UI updates
 - ✏️ **Inline Editing** - Edit todos directly with save/cancel options
-- 🎨 **Beautiful UI** - Gradient backgrounds with Space Mono typography
-- 📱 **Responsive Design** - Works perfectly on desktop and mobile
-- 🔄 **Real-time Updates** - Changes persist instantly to the database
+- 📄 **Pagination** - Smart pagination with 6 todos per page and intuitive navigation
+- 🎨 **Notebook Design** - Beautiful notebook-style UI with spiral binding and lined paper
+- 📱 **Responsive Design** - Fully responsive across all devices (360px to desktop)
+- 🔄 **Real-time Updates** - Changes persist instantly with optimistic updates
+- 💫 **Modern UX** - Loading states, error handling, and smooth transitions
 - 🛡️ **Secure** - Password hashing, token expiration, CORS protection
 - 🚀 **Production Ready** - Environment variables, error handling, deployment configs
 
@@ -21,8 +23,8 @@ A modern, production-ready todo application built with React, TypeScript, Node.j
 - **React 19.1.1** with TypeScript
 - **Vite 7.1.0** for fast development and building
 - **styled-components 6.1.19** for CSS-in-JS styling
-- **Axios** for API communication
-- **React Icons** for beautiful icons
+- **Axios** with interceptors for API communication
+- **Kalam & Caveat fonts** for handwritten notebook aesthetic
 
 ### **Backend**
 - **Node.js** with **Express.js** framework
@@ -93,12 +95,15 @@ Visit `http://localhost:5173` and start creating todos! 🎉
 todo-vite-fs/
 ├── src/                          # Frontend source code
 │   ├── components/
-│   │   └── Auth.tsx             # Authentication component
+│   │   ├── Auth.tsx             # Authentication component
+│   │   ├── TodoInput.tsx        # Todo input component
+│   │   ├── TodoList.tsx         # Todo list component
+│   │   └── Footer.tsx           # Footer component
 │   ├── services/
-│   │   └── api.ts               # API service layer
+│   │   └── api.ts               # API service layer with interceptors
 │   ├── types/
 │   │   └── index.ts             # TypeScript type definitions
-│   └── App.tsx                  # Main application component
+│   └── App.tsx                  # Main application with pagination
 ├── todo-backend/                # Backend source code
 │   ├── src/
 │   │   ├── controllers/         # Business logic
@@ -120,10 +125,10 @@ todo-vite-fs/
 - `POST /auth/login` - User login
 
 ### **Todos** (Protected Routes)
-- `GET /notes` - Get all user's todos
-- `POST /notes` - Create new todo
-- `PUT /notes/:id` - Update specific todo
-- `DELETE /notes/:id` - Delete specific todo
+- `GET /api/todos` - Get paginated user todos
+- `POST /api/todos` - Create new todo
+- `PUT /api/todos/:id` - Update specific todo
+- `DELETE /api/todos/:id` - Delete specific todo
 
 ### **Health Check**
 - `GET /health` - Server health status
@@ -167,11 +172,22 @@ This application is ready for deployment on platforms like Vercel, Railway, or H
 
 ## 🎨 Design System
 
-- **Color Palette**: Pink/purple gradient background (#f79177 → #b92a59)
-- **Typography**: Space Mono font family (monospace)
-- **Components**: Consistent border radius (3px inputs, 7px containers)
-- **Interactions**: Smooth hover effects and transitions
-- **Responsive**: Mobile-first design with clamp() functions
+### **Notebook Aesthetic**
+- **Color Palette**: Warm paper tones (#f5f1e8, #f0ebe0) with blue accents (#1e40af)
+- **Typography**: Kalam (cursive) and Caveat fonts for handwritten feel
+- **Layout**: Spiral binding, red margin line, ruled paper background
+- **Components**: Rotated elements for natural handwritten appearance
+
+### **Responsive Design**
+- **Desktop**: Full notebook with margins and spiral binding
+- **Tablet (768px)**: Adjusted spacing and positioning
+- **Mobile (480px)**: Optimized padding and font sizes
+- **Small Mobile (360px)**: Full-screen layout with minimal margins
+
+### **Interactive Elements**
+- **Hover Effects**: Rotation and color transitions
+- **Touch Targets**: Minimum 44px for mobile accessibility
+- **Loading States**: Smooth transitions and visual feedback
 
 ## 🤝 Contributing
 
