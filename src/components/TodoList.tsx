@@ -118,6 +118,7 @@ const TodoItem = styled.li<{ $isDeleting: boolean }>`
   transform: rotate(-0.2deg);
   opacity: ${props => props.$isDeleting ? 0.5 : 1};
   transition: opacity 0.2s ease;
+  min-height: 44px; /* Better touch target */
 
   &:nth-child(even) {
     transform: rotate(0.3deg);
@@ -125,6 +126,11 @@ const TodoItem = styled.li<{ $isDeleting: boolean }>`
 
   &:nth-child(3n) {
     transform: rotate(-0.1deg);
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    padding: 6px 0;
   }
 `;
 
@@ -140,6 +146,7 @@ const TaskCheckbox = styled.div<{ $completed: boolean }>`
   background: ${props => props.$completed ? '#1e40af' : 'transparent'};
   transform: rotate(-2deg);
   transition: all 0.2s ease;
+  min-width: 20px; /* Prevent shrinking */
 
   ${props => props.$completed && `
     &::after {
@@ -152,6 +159,10 @@ const TaskCheckbox = styled.div<{ $completed: boolean }>`
       font-weight: bold;
     }
   `}
+
+  @media (max-width: 480px) {
+    margin-right: 12px;
+  }
 `;
 
 const TodoText = styled.span<{ $completed: boolean }>`
@@ -164,6 +175,17 @@ const TodoText = styled.span<{ $completed: boolean }>`
   text-decoration-color: #dc2626;
   text-decoration-thickness: 2px;
   transition: all 0.2s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 0.95rem;
+  }
 `;
 
 const TodoEditInput = styled.input`
@@ -190,9 +212,22 @@ const TaskActions = styled.div`
   transition: opacity 0.2s ease;
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
+  margin-left: 8px;
 
   ${TodoItem}:hover & {
     opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    /* Always show on mobile for better touch access */
+    opacity: 0.7;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    margin-left: 6px;
   }
 `;
 
@@ -206,10 +241,22 @@ const ActionButton = styled.button`
   border-radius: 3px;
   transition: all 0.2s ease;
   line-height: 1;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 2px;
   }
 `;
 
@@ -266,6 +313,19 @@ const EmptyState = styled.div`
   p {
     font-size: 1.1rem;
     margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 30px 15px;
+
+    &::before {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 1rem;
+    }
   }
 `;
 

@@ -428,6 +428,29 @@ const AppContainer = styled.div`
   @media (max-width: 768px) {
     margin: 10px;
     padding: 30px 40px 30px 60px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    margin: 5px;
+    padding: 25px 30px 25px 50px;
+    border-radius: 4px;
+
+    &::before {
+      left: 40px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    margin: 0;
+    padding: 20px 25px 20px 45px;
+    border-radius: 0;
+    min-height: 100vh;
+    box-shadow: none;
+
+    &::before {
+      left: 35px;
+    }
   }
 `;
 
@@ -466,6 +489,14 @@ const PageTitle = styled.h1`
   @media (max-width: 768px) {
     font-size: 2rem;
   }
+
+  @media (max-width: 480px) {
+    font-size: 1.75rem;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const PageDate = styled.div`
@@ -473,6 +504,15 @@ const PageDate = styled.div`
   color: #6b7280;
   transform: rotate(0.5deg);
   margin-bottom: 10px;
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -487,6 +527,10 @@ const UserInfo = styled.div`
     position: static;
     margin-top: 1rem;
     justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 0.75rem;
   }
 `;
 
@@ -563,6 +607,21 @@ const PaginationButtons = styled.div`
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.25rem;
+
+  @media (max-width: 480px) {
+    gap: 0.25rem;
+    padding: 0.5rem;
+    
+    /* Hide scrollbar but keep scrolling */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 `;
 
 const PaginationButton = styled.button<{ $active?: boolean }>`
@@ -581,6 +640,7 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
   align-items: center;
   justify-content: center;
   transform: rotate(-2deg);
+  flex-shrink: 0;
 
   &:hover:not(:disabled) {
     background: #1e40af;
@@ -603,6 +663,20 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
 
   &:nth-child(even) {
     transform: rotate(-1deg);
+  }
+
+  @media (max-width: 480px) {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+    padding: 0.4rem;
+  }
+
+  @media (max-width: 360px) {
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.7rem;
+    padding: 0.35rem;
   }
 `;
 
@@ -634,6 +708,7 @@ const ErrorToast = styled.div`
   z-index: 1000;
   animation: slideIn 0.3s ease-out;
   transform: rotate(-1deg);
+  max-width: calc(100vw - 40px);
 
   @keyframes slideIn {
     from {
@@ -651,6 +726,15 @@ const ErrorToast = styled.div`
     right: 10px;
     left: 10px;
     text-align: center;
+    max-width: none;
+  }
+
+  @media (max-width: 480px) {
+    top: 5px;
+    right: 5px;
+    left: 5px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
   }
 `;
 

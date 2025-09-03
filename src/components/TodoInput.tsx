@@ -58,6 +58,16 @@ const Input = styled.input`
   &:focus {
     border-bottom-color: #1e40af;
   }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: 8px 40px 8px 0;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 0.95rem;
+    padding: 6px 35px 6px 0;
+  }
 `;
 
 const AddButton = styled.button`
@@ -83,6 +93,18 @@ const AddButton = styled.button`
     background: #1e40af;
     color: white;
     transform: translateY(-50%) rotate(90deg);
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 360px) {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
   }
 `;
 
