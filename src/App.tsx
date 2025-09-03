@@ -1,171 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { MdAdd } from "react-icons/md";
-import { SlTrash } from "react-icons/sl";
-import { MdEdit, MdCheck, MdClose } from "react-icons/md";
-import { VscGithub } from "react-icons/vsc";
-import { SiLinkedin } from "react-icons/si";
 import Auth from "./components/Auth";
+import TodoInput from "./components/TodoInput";
+import TodoList from "./components/TodoList";
+import Footer from "./components/Footer";
 import { todoAPI } from "./services/api";
 import type { Todo, User, AuthResponse } from "./types";
-
-interface TodoInputProps {
-  todo: string;
-  setTodo: (value: string) => void;
-  addTodo: () => void;
-  todos: Todo[];
-}
-
-const TodoInputComponent: React.FC<TodoInputProps> = ({
-  todo,
-  setTodo,
-  addTodo,
-}) => {
-  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addTodo();
-    }
-  };
-
-  return (
-    <InputWrapper>
-      <TodoInput
-        type="text"
-        value={todo}
-        placeholder="Let's get workin'..."
-        onChange={(e) => setTodo(e.target.value)}
-        onKeyUp={handleKeyUp}
-      />
-      <AddButton onClick={addTodo}>
-        <MdAdd size={21} />
-      </AddButton>
-    </InputWrapper>
-  );
-};
-
-interface TodoListProps {
-  todoList: Todo[];
-  removeTodo: (todoId: string) => void;
-  updateTodo: (todoId: string, newTitle: string) => void;
-}
-
-const TodoListComponent: React.FC<TodoListProps> = ({
-  todoList,
-  removeTodo,
-  updateTodo,
-}) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-
-  const startEdit = (todo: Todo) => {
-    setEditingId(todo.id);
-    setEditText(todo.title);
-  };
-
-  const saveEdit = () => {
-    if (editingId && editText.trim() !== "") {
-      updateTodo(editingId, editText.trim());
-      setEditingId(null);
-      setEditText("");
-    }
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditText("");
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      saveEdit();
-    } else if (e.key === "Escape") {
-      cancelEdit();
-    }
-  };
-
-  return (
-    <TodoListContainer>
-      {todoList?.length > 0 ? (
-        <TodoList>
-          {todoList.map((todo) => (
-            <TodoItem key={todo.id}>
-              {editingId === todo.id ? (
-                <>
-                  <TodoEditInput
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    autoFocus
-                  />
-                  <SaveButton onClick={saveEdit}>
-                    <MdCheck size={18} />
-                  </SaveButton>
-                  <CancelButton onClick={cancelEdit}>
-                    <MdClose size={18} />
-                  </CancelButton>
-                </>
-              ) : (
-                <>
-                  <TodoText>{todo.title}</TodoText>
-                  <EditButton onClick={() => startEdit(todo)}>
-                    <MdEdit size={18} />
-                  </EditButton>
-                  <DeleteButton onClick={() => removeTodo(todo.id)}>
-                    <SlTrash size={18} />
-                  </DeleteButton>
-                </>
-              )}
-            </TodoItem>
-          ))}
-        </TodoList>
-      ) : (
-        <EmptyState>
-          <p>Add some tasks! :)</p>
-        </EmptyState>
-      )}
-    </TodoListContainer>
-  );
-};
-
-const FooterComponent: React.FC = () => {
-  return (
-    <Footer>
-      <p>Made with 💖</p>
-      <SocialsContainer>
-        <a
-          href="https://github.com/adelicia-js"
-          rel="noreferrer"
-          target="_blank"
-        >
-          <VscGithub size={25} />
-        </a>
-        <a
-          href="https://www.linkedin.com/in/adelicia/"
-          rel="noreferrer"
-          target="_blank"
-        >
-          <SiLinkedin size={25} />
-        </a>
-      </SocialsContainer>
-      <p>
-        <SourceLink
-          href="https://github.com/adelicia-js/todo-cra"
-          rel="noreferrer"
-          target="_blank"
-        >
-          $source | 2025 - 2026
-        </SourceLink>
-      </p>
-    </Footer>
-  );
-};
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [todo, setTodo] = useState("");
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [todosPerPage] = useState(6);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -175,9 +27,8 @@ function App() {
         const savedUser = localStorage.getItem("user");
 
         if (token && savedUser) {
-          await todoAPI.getTodos(); // Or a dedicated health-check endpoint
           setUser(JSON.parse(savedUser));
-          fetchTodos();
+          // Don't call fetchTodos here - let the other useEffect handle it
         } else {
           setLoading(false);
         }
@@ -189,27 +40,72 @@ function App() {
     };
 
     validateToken();
-  }, []);
+  }, []); // Remove fetchTodos dependency
 
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async (page: number = currentPage) => {
     try {
-      const fetchedTodos = await todoAPI.getTodos();
-      setTodos(fetchedTodos);
+      setLoading(true);
+      const response = await todoAPI.getTodos(page, todosPerPage);
+      setTodos(response.todos);
+      setTotalPages(response.totalPages);
+      setTotalCount(response.totalCount);
+      setCurrentPage(response.currentPage);
     } catch (error) {
       console.error("Failed to fetch todos:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, todosPerPage]);
 
   const addTodo = async () => {
     if (todo.trim() !== "") {
+      const todoText = todo.trim();
+      setTodo(""); // Clear input immediately
+      
+      // Create optimistic todo with temporary ID
+      const optimisticTodo: Todo = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        title: todoText,
+        completed: false,
+        createdAt: new Date().toISOString(),
+        userId: user?.id || ""
+      };
+
+      // Update counts immediately
+      const newTotalCount = totalCount + 1;
+      const newTotalPages = Math.ceil(newTotalCount / todosPerPage);
+      
+      setTotalCount(newTotalCount);
+      setTotalPages(newTotalPages);
+      
+      // If we're not on page 1, navigate there to see the new todo
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        setTodos([optimisticTodo]); // Will be populated by useEffect
+      } else {
+        // We're on page 1, add to beginning and keep only first 6
+        setTodos(prevTodos => [optimisticTodo, ...prevTodos].slice(0, todosPerPage));
+      }
+
       try {
-        const newTodo = await todoAPI.createTodo(todo.trim());
-        setTodos([newTodo, ...todos]);
-        setTodo("");
+        // Make the actual API call in background
+        const newTodo = await todoAPI.createTodo(todoText);
+        
+        // Replace the optimistic todo with real one (only if still visible)
+        setTodos(prevTodos => 
+          prevTodos.map(t => t.id === optimisticTodo.id ? newTodo : t)
+        );
       } catch (error) {
         console.error("Failed to create todo:", error);
+        
+        // Rollback on error
+        setTodos(prevTodos => prevTodos.filter(t => t.id !== optimisticTodo.id));
+        setTotalCount(prevCount => prevCount - 1);
+        setTotalPages(Math.ceil((newTotalCount - 1) / todosPerPage));
+        
+        // Show error to user
+        setErrorMessage("Failed to add todo. Please try again.");
+        setTimeout(() => setErrorMessage(""), 3000);
       }
     }
   };
@@ -223,18 +119,52 @@ function App() {
     }
   };
 
-  const deleteTodo = async (todoId: string) => {
+  const toggleComplete = async (todoId: string, completed: boolean) => {
     try {
+      const updatedTodo = await todoAPI.updateTodo(
+        todoId,
+        undefined,
+        completed
+      );
+      setTodos(todos.map((t) => (t.id === todoId ? updatedTodo : t)));
+    } catch (error) {
+      console.error("Failed to toggle todo completion:", error);
+    }
+  };
+
+  const deleteTodo = async (todoId: string) => {
+    if (deletingId) return; // Prevent multiple deletions at once
+    
+    setDeletingId(todoId);
+
+    try {
+      // Make the actual API call first (no optimistic update for pagination reasons)
       await todoAPI.deleteTodo(todoId);
-      setTodos(todos.filter((t) => t.id !== todoId));
+      
+      // Calculate what should happen after deletion
+      const newTotalCount = totalCount - 1;
+      const newTotalPages = Math.ceil(newTotalCount / todosPerPage);
+      
+      // If we're now on a page that shouldn't exist, go to the last valid page
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+        // The useEffect will fetch the correct page
+      } else {
+        // Stay on current page but refresh to get correct data
+        await fetchTodos(currentPage);
+      }
     } catch (error) {
       console.error("Failed to delete todo:", error);
+      setErrorMessage("Failed to delete todo. Please try again.");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const handleAuthSuccess = (authData: AuthResponse) => {
     setUser(authData.user);
-    fetchTodos();
+    fetchTodos(1); // Start with page 1 for new user
   };
 
   const logout = () => {
@@ -242,13 +172,139 @@ function App() {
     localStorage.removeItem("user");
     setUser(null);
     setTodos([]);
+    setCurrentPage(1);
+    setTotalPages(0);
+    setTotalCount(0);
+    setDeletingId(null);
+  };
+
+  // Effect to fetch todos when page changes or user is set
+  useEffect(() => {
+    if (user) {
+      fetchTodos(currentPage);
+    }
+  }, [currentPage, user, fetchTodos]);
+
+  const paginate = (pageNumber: number) => {
+    if (deletingId) return; // Prevent pagination during delete
+    if (pageNumber !== currentPage && pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  const renderPaginationNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5; // Show max 5 page numbers at once
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(
+          <PaginationButton
+            key={i}
+            onClick={() => paginate(i)}
+            $active={currentPage === i}
+          >
+            {i}
+          </PaginationButton>
+        );
+      }
+    } else {
+      // Always show first page
+      pages.push(
+        <PaginationButton
+          key={1}
+          onClick={() => paginate(1)}
+          $active={currentPage === 1}
+        >
+          1
+        </PaginationButton>
+      );
+
+      // Determine the range around current page
+      let startPage, endPage;
+      
+      if (currentPage <= 3) {
+        // Near beginning: 1 2 3 4 ... last
+        startPage = 2;
+        endPage = Math.min(4, totalPages - 1);
+      } else if (currentPage >= totalPages - 2) {
+        // Near end: 1 ... (last-3) (last-2) (last-1) last
+        startPage = Math.max(2, totalPages - 3);
+        endPage = totalPages - 1;
+      } else {
+        // Middle: 1 ... (current-1) current (current+1) ... last
+        startPage = currentPage - 1;
+        endPage = currentPage + 1;
+      }
+
+      // Add ellipsis before middle section if needed
+      if (startPage > 2) {
+        pages.push(
+          <EllipsisSpan key="ellipsis-start">...</EllipsisSpan>
+        );
+      }
+
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          <PaginationButton
+            key={i}
+            onClick={() => paginate(i)}
+            $active={currentPage === i}
+          >
+            {i}
+          </PaginationButton>
+        );
+      }
+
+      // Add ellipsis after middle section if needed
+      if (endPage < totalPages - 1) {
+        pages.push(
+          <EllipsisSpan key="ellipsis-end">...</EllipsisSpan>
+        );
+      }
+
+      // Always show last page (if not already shown)
+      if (totalPages > 1) {
+        pages.push(
+          <PaginationButton
+            key={totalPages}
+            onClick={() => paginate(totalPages)}
+            $active={currentPage === totalPages}
+          >
+            {totalPages}
+          </PaginationButton>
+        );
+      }
+    }
+
+    return pages;
   };
 
   if (loading) {
     return (
-      <AppContainer>
-        <Title>Loading...</Title>
-      </AppContainer>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%)",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Kalam, cursive",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "1.5rem",
+            color: "#1e40af",
+            textAlign: "center",
+            transform: "rotate(-1deg)",
+          }}
+        >
+          Loading your notebook...
+        </div>
+      </div>
     );
   }
 
@@ -258,384 +314,343 @@ function App() {
 
   return (
     <AppContainer>
-      <Header>
-        <Title>Make a To-Do List!</Title>
+      <SpiralBinding>
+        <SpiralHole />
+        <SpiralHole />
+        <SpiralHole />
+        <SpiralHole />
+        <SpiralHole />
+        <SpiralHole />
+        <SpiralHole />
+      </SpiralBinding>
+
+      <PageHeader>
+        <PageTitle>My Todo List</PageTitle>
+        <PageDate>
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </PageDate>
         <UserInfo>
           <LogoutButton onClick={logout}>Logout</LogoutButton>
         </UserInfo>
-      </Header>
+      </PageHeader>
 
-      <Content>
-        <TodoInputComponent
-          todo={todo}
-          setTodo={setTodo}
-          addTodo={addTodo}
-          todos={todos}
-        />
-        <TodoListComponent
-          todoList={todos}
-          removeTodo={deleteTodo}
-          updateTodo={updateTodo}
-        />
-      </Content>
-      <FooterComponent />
+      <TodoInput
+        todo={todo}
+        setTodo={setTodo}
+        addTodo={addTodo}
+        todos={todos}
+      />
+
+      <TodoList
+        todoList={todos}
+        removeTodo={deleteTodo}
+        updateTodo={updateTodo}
+        toggleComplete={toggleComplete}
+        deletingId={deletingId}
+      />
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationInfo>
+            Page {currentPage} of {totalPages} ({totalCount} total todos)
+          </PaginationInfo>
+          <PaginationButtons>
+            <PaginationButton
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </PaginationButton>
+{renderPaginationNumbers()}
+            <PaginationButton
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </PaginationButton>
+          </PaginationButtons>
+        </Pagination>
+      )}
+
+      <Doodle className="doodle-1">⭐</Doodle>
+      <Doodle className="doodle-2">→</Doodle>
+      <Doodle className="doodle-3">♫</Doodle>
+
+      <PageNumber>Page {currentPage}</PageNumber>
+      <Footer />
+      
+      {errorMessage && (
+        <ErrorToast>
+          {errorMessage}
+        </ErrorToast>
+      )}
     </AppContainer>
   );
 }
 
 const AppContainer = styled.div`
-  text-align: center;
-  min-height: 100vh;
-  background: linear-gradient(
-    185deg,
-    #f79177 0%,
-    #b88571 25%,
-    #c68fce 50%,
-    #da7ca3 75%,
-    #b92a59 100%
-  );
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
-  overflow-x: hidden;
-  font-family: "Space Mono", monospace;
-  padding: 2rem 0;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 2rem;
   position: relative;
-  width: 100%;
+  background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
+  min-height: 100vh;
+  font-family: "Kalam", cursive;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #faf7f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(139, 69, 19, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  padding: 40px 60px 40px 80px;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><text y='20' font-size='20'>🖋️</text></svg>") 12 12, auto;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 25px,
+    rgba(2, 132, 199, 0.1) 25px,
+    rgba(2, 132, 199, 0.1) 26px
+  );
 
-  @media screen and (min-width: 300px) and (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dc2626;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 768px) {
+    margin: 10px;
+    padding: 30px 40px 30px 60px;
   }
 `;
 
-const Title = styled.h1`
-  text-transform: uppercase;
-  color: #310121;
-  font-size: clamp(1.5rem, 4vw, 3rem);
-  margin: 0;
+const SpiralBinding = styled.div`
+  position: absolute;
+  left: 15px;
+  top: 20px;
+  bottom: 20px;
+  width: 20px;
+`;
+
+const SpiralHole = styled.div`
+  width: 12px;
+  height: 12px;
+  border: 2px solid #8b4513;
+  border-radius: 50%;
+  margin-bottom: 30px;
+  background: #f5f1e8;
+`;
+
+const PageHeader = styled.div`
   text-align: center;
+  margin-bottom: 30px;
+  position: relative;
+`;
+
+const PageTitle = styled.h1`
+  font-family: "Caveat", cursive;
+  font-size: 2.5rem;
+  color: #1e40af;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  transform: rotate(-1deg);
+  margin-bottom: 5px;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+`;
+
+const PageDate = styled.div`
+  font-size: 1rem;
+  color: #6b7280;
+  transform: rotate(0.5deg);
+  margin-bottom: 10px;
 `;
 
 const UserInfo = styled.div`
   position: absolute;
-  right: 2rem;
+  top: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 
-  span {
-    color: #310121;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 768px) {
+  @media (max-width: 768px) {
     position: static;
     margin-top: 1rem;
     justify-content: center;
   }
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    flex-direction: column;
-    gap: 0.5rem;
-
-    span {
-      font-size: 0.8rem;
-    }
-  }
 `;
 
 const LogoutButton = styled.button`
-  font-family: "Space Mono", monospace;
-  background: #310121;
+  font-family: "Kalam", cursive;
+  background: #1e40af;
   color: white;
-  border: 1px solid #310121;
-  border-radius: 5px;
-  padding: 0.4rem 0.8rem;
+  border: 2px solid #1e40af;
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  transform: rotate(-1deg);
+
+  &:hover {
+    background: transparent;
+    color: #1e40af;
+    transform: rotate(1deg);
+  }
+`;
+
+const Doodle = styled.div`
+  position: absolute;
+  font-size: 1.2rem;
+  color: #9ca3af;
+  opacity: 0.6;
+  pointer-events: none;
+
+  &.doodle-1 {
+    top: 80px;
+    right: 30px;
+    transform: rotate(15deg);
+  }
+
+  &.doodle-2 {
+    bottom: 100px;
+    right: 40px;
+    transform: rotate(-10deg);
+  }
+
+  &.doodle-3 {
+    top: 200px;
+    left: 20px;
+    transform: rotate(25deg);
+  }
+`;
+
+const PageNumber = styled.div`
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-style: italic;
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const PaginationInfo = styled.div`
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-align: center;
+  font-style: italic;
+`;
+
+const PaginationButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+`;
+
+const PaginationButton = styled.button<{ $active?: boolean }>`
+  font-family: "Kalam", cursive;
+  background: ${(props) => (props.$active ? "#1e40af" : "transparent")};
+  color: ${(props) => (props.$active ? "white" : "#1e40af")};
+  border: 2px solid #1e40af;
+  border-radius: 50%;
+  padding: 0.5rem;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
-
-  &:hover {
-    background: white;
-    color: #310121;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
-  }
-`;
-
-const Content = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  border-radius: 7px 3px;
-  width: clamp(30vw, 120vw, 50vw);
-  margin: 0 auto;
-  background: #31012150;
-  box-shadow: 1px 0.1px 5px #31012194;
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 85vw;
-  }
-`;
-
-const InputWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem 0.5rem;
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 85vw;
-  }
-`;
-
-const TodoInput = styled.input`
-  font-family: "Space Mono", monospace;
-  font-style: italic;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  width: calc(clamp(30vw, 120vw, 50vw) - 20%);
-  background: #ffffffb0;
-  font-size: clamp(0.5rem, 2rem, 1rem);
-  padding: 0.3rem;
-  box-shadow: 1px 0.1px 5px #ffffff71;
-
-  &:focus {
-    outline: 1px solid #310121;
-    box-shadow: 1px 0.1px 5px #310121a1;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 67vw;
-  }
-`;
-
-const ActionButton = styled.button`
-  border: 1px solid white;
-  border-radius: 30%;
-  background: #3101218e;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #ffffffa2;
-    color: #310121;
-    border: 1px solid #310121;
-  }
-`;
-
-const AddButton = styled(ActionButton)`
-  padding: 0.5rem;
+  min-width: 35px;
+  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
-`;
+  transform: rotate(-2deg);
 
-const DeleteButton = styled(ActionButton)`
-  font-size: clamp(0.1rem, 1rem, 0.7rem);
-  padding: 0.5rem;
-  height: auto;
+  &:hover:not(:disabled) {
+    background: #1e40af;
+    color: white;
+    transform: rotate(2deg);
+  }
 
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    padding-right: 0.3rem;
-    padding-left: 0.3rem;
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+    color: #9ca3af;
+    border-color: #9ca3af;
+    transform: rotate(0deg);
+  }
+
+  &:nth-child(odd) {
+    transform: rotate(1deg);
+  }
+
+  &:nth-child(even) {
+    transform: rotate(-1deg);
   }
 `;
 
-const EditButton = styled(ActionButton)`
-  font-size: clamp(0.1rem, 1rem, 0.7rem);
-  padding: 0.5rem;
-  height: auto;
-  background: #2d7d32;
-
-  &:hover {
-    background: #ffffffa2;
-    color: #2d7d32;
-    border: 1px solid #2d7d32;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    padding-right: 0.3rem;
-    padding-left: 0.3rem;
-  }
-`;
-
-const SaveButton = styled(ActionButton)`
-  font-size: clamp(0.1rem, 1rem, 0.7rem);
-  padding: 0.5rem;
-  height: auto;
-  background: #1976d2;
-
-  &:hover {
-    background: #ffffffa2;
-    color: #1976d2;
-    border: 1px solid #1976d2;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    padding-right: 0.3rem;
-    padding-left: 0.3rem;
-  }
-`;
-
-const CancelButton = styled(ActionButton)`
-  font-size: clamp(0.1rem, 1rem, 0.7rem);
-  padding: 0.5rem;
-  height: auto;
-  background: #d32f2f;
-
-  &:hover {
-    background: #ffffffa2;
-    color: #d32f2f;
-    border: 1px solid #d32f2f;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    padding-right: 0.3rem;
-    padding-left: 0.3rem;
-  }
-`;
-
-const TodoListContainer = styled.div`
-  margin-top: -1rem;
-`;
-
-const TodoList = styled.ul`
-  padding-left: 0;
+const EllipsisSpan = styled.span`
+  color: #6b7280;
+  font-family: "Kalam", cursive;
+  font-size: 0.9rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const TodoItem = styled.div`
-  display: flex;
-  flex-direction: row;
-  text-align: center;
-  justify-content: center;
   align-items: center;
-  overflow-wrap: anywhere;
-  width: calc(clamp(30vw, 120vw, 50vw) - 45%);
-  gap: 0.5rem;
-  border-radius: 7px 7px;
-  margin: 0 auto;
-  padding: 0.3rem 0.5rem;
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 70vw;
-    justify-content: flex-end;
-  }
-`;
-
-const TodoText = styled.li`
-  list-style-type: none;
-  width: calc(clamp(30vw, 120vw, 50vw) - 45%);
-  border-radius: 5px;
-  font-size: clamp(0.3rem, 2rem, 1rem);
-  background: #3101218e;
-  color: white;
-  border: 1px solid white;
-  padding: 0.3rem 0.5rem;
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 50vw;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    width: 67vw;
-  }
-`;
-
-const TodoEditInput = styled.input`
-  font-family: "Space Mono", monospace;
-  list-style-type: none;
-  width: calc(clamp(30vw, 120vw, 50vw) - 45%);
-  border-radius: 5px;
-  font-size: clamp(0.3rem, 2rem, 1rem);
-  background: #ffffffb0;
-  color: #310121;
-  border: 1px solid #310121;
-  padding: 0.3rem 0.5rem;
-
-  &:focus {
-    outline: 1px solid #310121;
-    box-shadow: 1px 0.1px 5px #310121a1;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 538px) {
-    width: 50vw;
-  }
-
-  @media screen and (min-width: 300px) and (max-width: 450px) {
-    width: 67vw;
-  }
-`;
-
-const EmptyState = styled.div`
-  padding: 2rem;
-
-  p {
-    color: #310121;
-    font-size: 1.2rem;
-    margin: 0;
-  }
-`;
-
-const Footer = styled.footer`
-  margin-top: 2rem;
-
-  p {
-    margin: 0.5rem 0;
-    color: #310121;
-  }
-`;
-
-const SocialsContainer = styled.p`
-  display: flex;
-  flex-direction: row;
   justify-content: center;
-  gap: 0.7rem;
-
-  a {
-    color: black;
-    transition: all 0.2s ease;
-
-    &:visited {
-      color: black;
-    }
-
-    &:hover {
-      color: #770f18;
-      filter: drop-shadow(0 0 0.15rem #947779c9);
-    }
-  }
+  min-width: 35px;
+  height: 35px;
+  padding: 0 0.25rem;
+  user-select: none;
+  transform: rotate(-1deg);
 `;
 
-const SourceLink = styled.a`
-  text-decoration: none;
-  color: black;
+const ErrorToast = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #dc2626;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Kalam', cursive;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+  transform: rotate(-1deg);
 
-  &:visited {
-    color: black;
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%) rotate(-1deg);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0) rotate(-1deg);
+      opacity: 1;
+    }
   }
 
-  &:hover {
-    color: #770f37;
-    text-decoration: underline;
-    text-underline-offset: 0.4rem;
+  @media (max-width: 768px) {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    text-align: center;
   }
 `;
 

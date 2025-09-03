@@ -13,13 +13,36 @@ export const getNotes = async (
 ): Promise<Response> => {
   try {
     const userId = (req as AuthenticatedRequest).userId;
+    
+    // Parse query parameters with defaults
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 10));
+    
+    // Calculate offset for pagination
+    const skip = (page - 1) * limit;
 
-    const notes = await prisma.todo.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
+    // Execute both queries in parallel
+    const [notes, totalCount] = await Promise.all([
+      prisma.todo.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.todo.count({
+        where: { userId },
+      }),
+    ]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return res.json({
+      todos: notes,
+      totalPages,
+      currentPage: page,
+      totalCount,
     });
-
-    return res.json(notes);
   } catch (error) {
     console.error("Get notes error:", error);
     return res.status(500).json({ error: "Failed to fetch notes" });

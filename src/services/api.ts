@@ -1,14 +1,16 @@
 import axios from "axios";
+import { config } from "../utils/env";
 import type { 
   AuthResponse, 
   Todo, 
   LoginRequest, 
   RegisterRequest, 
   CreateTodoRequest, 
-  UpdateTodoRequest 
+  UpdateTodoRequest,
+  PaginatedTodosResponse
 } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = config.API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -55,8 +57,10 @@ export const authAPI = {
 
 // Todo API calls
 export const todoAPI = {
-  getTodos: async (): Promise<Todo[]> => {
-    const response = await api.get<Todo[]>("/api/notes");
+  getTodos: async (page: number = 1, limit: number = 10): Promise<PaginatedTodosResponse> => {
+    const response = await api.get<PaginatedTodosResponse>("/api/notes", {
+      params: { page, limit }
+    });
     return response.data;
   },
 

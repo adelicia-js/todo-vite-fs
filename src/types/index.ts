@@ -13,7 +13,6 @@ export interface Todo {
   title: string;
   completed: boolean;
   createdAt: string;
-  updatedAt: string;
   userId: string;
 }
 
@@ -42,6 +41,13 @@ export interface UpdateTodoRequest {
 export interface ApiResponse<T> {
   data: T;
   message?: string;
+}
+
+export interface PaginatedTodosResponse {
+  todos: Todo[];
+  totalPages: number;
+  currentPage: number;
+  totalCount: number;
 }
 
 export interface ErrorResponse {
