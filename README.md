@@ -2,7 +2,7 @@
 
 A modern, production-ready todo application built with React, TypeScript, Node.js, and SQLite. Features user authentication, real-time CRUD operations, and beautiful responsive design.
 
-<image src="public/app_screenshot.png" width="60%" height="60%">
+<image src="public/app_screenshot.png" width="85%" height="85%">
 
 ## ✨ Features
 
