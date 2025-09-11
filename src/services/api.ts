@@ -34,7 +34,15 @@ api.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
-      window.location.href = '/';
+      
+      // Create a custom error for session expiry
+      const sessionError = new Error("Your session has expired. Please log in again.");
+      sessionError.name = "SessionExpiredError";
+      
+      // Trigger a page refresh to show auth component
+      setTimeout(() => window.location.reload(), 100);
+      
+      return Promise.reject(sessionError);
     }
     return Promise.reject(error);
   }

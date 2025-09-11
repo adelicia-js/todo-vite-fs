@@ -238,6 +238,8 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { error?: string } } };
         setError(axiosError.response?.data?.error || "Authentication failed");
+      } else if (err instanceof Error && err.name === "SessionExpiredError") {
+        setError("Your session has expired. Please log in again.");
       } else {
         setError("Network error. Please check your connection.");
       }

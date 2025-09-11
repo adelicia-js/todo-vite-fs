@@ -32,9 +32,14 @@ function App() {
         } else {
           setLoading(false);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         // The interceptor in api.ts will handle the 401 error
         console.error("Token validation failed:", error);
+        
+        // Clear any stale auth data
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        setUser(null);
         setLoading(false);
       }
     };
@@ -50,8 +55,12 @@ function App() {
       setTotalPages(response.totalPages);
       setTotalCount(response.totalCount);
       setCurrentPage(response.currentPage);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to fetch todos:", error);
+      if (error instanceof Error && error.name === "SessionExpiredError") {
+        // Don't show error for session expiry as user will be redirected to login
+        return;
+      }
     } finally {
       setLoading(false);
     }
@@ -95,7 +104,7 @@ function App() {
         setTodos(prevTodos => 
           prevTodos.map(t => t.id === optimisticTodo.id ? newTodo : t)
         );
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to create todo:", error);
         
         // Rollback on error
@@ -103,9 +112,13 @@ function App() {
         setTotalCount(prevCount => prevCount - 1);
         setTotalPages(Math.ceil((newTotalCount - 1) / todosPerPage));
         
-        // Show error to user
-        setErrorMessage("Failed to add todo. Please try again.");
-        setTimeout(() => setErrorMessage(""), 3000);
+        // Show appropriate error message
+        if (error instanceof Error && error.name === "SessionExpiredError") {
+          setErrorMessage("Your session has expired. Please log in again.");
+        } else {
+          setErrorMessage("Failed to add todo. Please try again.");
+        }
+        setTimeout(() => setErrorMessage(""), 4000);
       }
     }
   };
@@ -114,8 +127,12 @@ function App() {
     try {
       const updatedTodo = await todoAPI.updateTodo(todoId, newTitle);
       setTodos(todos.map((t) => (t.id === todoId ? updatedTodo : t)));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to update todo:", error);
+      if (error instanceof Error && error.name === "SessionExpiredError") {
+        setErrorMessage("Your session has expired. Please log in again.");
+        setTimeout(() => setErrorMessage(""), 4000);
+      }
     }
   };
 
@@ -127,8 +144,12 @@ function App() {
         completed
       );
       setTodos(todos.map((t) => (t.id === todoId ? updatedTodo : t)));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to toggle todo completion:", error);
+      if (error instanceof Error && error.name === "SessionExpiredError") {
+        setErrorMessage("Your session has expired. Please log in again.");
+        setTimeout(() => setErrorMessage(""), 4000);
+      }
     }
   };
 
@@ -153,10 +174,14 @@ function App() {
         // Stay on current page but refresh to get correct data
         await fetchTodos(currentPage);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to delete todo:", error);
-      setErrorMessage("Failed to delete todo. Please try again.");
-      setTimeout(() => setErrorMessage(""), 3000);
+      if (error instanceof Error && error.name === "SessionExpiredError") {
+        setErrorMessage("Your session has expired. Please log in again.");
+      } else {
+        setErrorMessage("Failed to delete todo. Please try again.");
+      }
+      setTimeout(() => setErrorMessage(""), 4000);
     } finally {
       setDeletingId(null);
     }
